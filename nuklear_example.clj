@@ -1,7 +1,7 @@
 (ns nuklear-example
     (:import [org.lwjgl.glfw GLFW]
-             [org.lwjgl.opengl GL GL11]
-             [org.lwjgl.nuklear Nuklear NkContext NkAllocator NkPluginAllocI NkColor NkRect NkUserFont]
+             [org.lwjgl.opengl GL]
+             [org.lwjgl.nuklear Nuklear NkContext NkRect NkUserFont]
              [org.lwjgl BufferUtils PointerBuffer]
              [org.lwjgl.system MemoryUtil MemoryStack]))
 

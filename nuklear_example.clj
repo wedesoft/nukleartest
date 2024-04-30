@@ -51,7 +51,8 @@ void main()
 {
   frag_uv = texcoord;
   frag_color = color;
-  gl_Position = projection * vec4(position, 0, 1);
+  // gl_Position = projection * vec4(position, 0, 1);
+  gl_Position = vec4(position.x / 320 - 1, 1 - position.y / 240, 0, 1);
 }")
 
 (def fragment-source
@@ -61,7 +62,8 @@ in vec4 frag_color;
 out vec4 out_color;
 void main()
 {
-  out_color = frag_color;
+  // out_color = frag_color;
+  out_color = vec4(1, 1, 1, 1);
 }")
 
 (def program (GL20/glCreateProgram))
@@ -174,9 +176,10 @@ void main()
               (let [cmd    (atom (Nuklear/nk__draw_begin context cmds))
                     offset (atom 0)]
                 (while @cmd
-                       (println (.elem_count @cmd))
-                       (GL11/glDrawElements GL11/GL_TRIANGLES (.elem_count @cmd) GL11/GL_UNSIGNED_SHORT @offset)
-                       (swap! offset + (* 2 (.elem_count @cmd)))
+                       (when (not (zero? (.elem_count @cmd)))
+                         (println (.elem_count @cmd))
+                         (GL11/glDrawElements GL11/GL_TRIANGLES (.elem_count @cmd) GL11/GL_UNSIGNED_SHORT @offset)
+                         (swap! offset + (* 2 (.elem_count @cmd))))
                        (reset! cmd (Nuklear/nk__draw_next @cmd cmds context))))
               (Nuklear/nk_clear context)
               (Nuklear/nk_buffer_clear cmds)

@@ -2,7 +2,7 @@
     (:import [org.lwjgl.glfw GLFW]
              [org.lwjgl.opengl GL GL11 GL14 GL15 GL20 GL30]
              [org.lwjgl.nuklear Nuklear NkContext NkAllocator NkRect NkUserFont NkPluginAllocI NkPluginFreeI NkConvertConfig
-              NkDrawVertexLayoutElement NkDrawVertexLayoutElement$Buffer NkBuffer]
+              NkDrawVertexLayoutElement NkDrawVertexLayoutElement$Buffer NkBuffer NkDrawNullTexture]
              [org.lwjgl BufferUtils PointerBuffer]
              [org.lwjgl.system MemoryUtil MemoryStack]))
 
@@ -119,6 +119,10 @@ void main()
 (println (.get cur 0))
 (def rect (NkRect/malloc stack))
 
+(def null-texture (NkDrawNullTexture/create))  ; TODO: use white 1x1 texture
+(.id (.texture null-texture) 0)
+(.set (.uv null-texture) 0.5 0.5)
+
 (def vertex-layout (NkDrawVertexLayoutElement/malloc 4))
 (-> vertex-layout (.position 0) (.attribute Nuklear/NK_VERTEX_POSITION) (.format Nuklear/NK_FORMAT_FLOAT) (.offset 0))
 (-> vertex-layout (.position 1) (.attribute Nuklear/NK_VERTEX_TEXCOORD) (.format Nuklear/NK_FORMAT_FLOAT) (.offset 0))
@@ -132,7 +136,7 @@ void main()
       (.vertex_layout vertex-layout)
       (.vertex_size 20)
       (.vertex_alignment 4)
-      ; TODO: (.tex_null null-texture)
+      (.tex_null null-texture)
       (.circle_segment_count 22)
       (.curve_segment_count 22)
       (.arc_segment_count 22)

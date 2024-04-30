@@ -1,39 +1,34 @@
 (ns nuklear-example
     (:import [org.lwjgl.glfw GLFW]
-             [org.lwjgl.opengl GL]
-             [org.lwjgl.nuklear Nuklear NkContext NkRect NkUserFont]
+             [org.lwjgl.opengl GL GL11]
+             [org.lwjgl.nuklear Nuklear NkContext NkAllocator NkRect NkUserFont NkPluginAllocI NkPluginFreeI]
              [org.lwjgl BufferUtils PointerBuffer]
              [org.lwjgl.system MemoryUtil MemoryStack]))
 
 (GLFW/glfwInit)
-
-(defn make-byte-buffer
-  [data]
-  (doto (BufferUtils/createByteBuffer (count data))
-    (.put ^bytes data)
-    (.flip)))
 
 (def window (GLFW/glfwCreateWindow 640 480 "Nuklear Example" 0 0))
 
 (GLFW/glfwMakeContextCurrent window)
 (GLFW/glfwShowWindow window)
 (GL/createCapabilities)
-; (GLFW/glfwSwapInterval 1)
 
 (def context (NkContext/create))
 
+(def allocator (NkAllocator/create))
+(.alloc allocator (reify NkPluginAllocI (invoke [this handle old size] (MemoryUtil/nmemAllocChecked size))))
+(.mfree allocator (reify NkPluginFreeI (invoke [this handle ptr] (MemoryUtil/nmemFree ptr))))
+
+(def font (NkUserFont/create))
+
+(Nuklear/nk_init context allocator font)
+
 (def stack (MemoryStack/stackPush))
-(def cur (.mallocLong stack 1))
+(def cur (.mallocInt stack 1))
 (.put cur 0 50)
 (println (.get cur 0))
 (def rect (NkRect/malloc stack))
-(def font (NkUserFont/create))
 
-(def memory (byte-array 1000000))
-
-(def buffer (make-byte-buffer memory))
-
-(Nuklear/nk_init_fixed context buffer font)
 
 (while (not (GLFW/glfwWindowShouldClose window))
        (GLFW/glfwPollEvents)
@@ -44,9 +39,13 @@
             (.flip p)
             (println (Nuklear/nk_progress context p 100 true))
             (Nuklear/nk_end context)
+            (GL11/glClear GL11/GL_COLOR_BUFFER_BIT)
             (GLFW/glfwSwapBuffers window))))
 
 (Nuklear/nk_free context)
+
+(.free (.alloc allocator))
+(.free (.mfree allocator))
 
 (GLFW/glfwTerminate)
 

@@ -64,7 +64,7 @@ out vec4 out_color;
 void main()
 {
   // out_color = frag_color;
-  out_color = vec4(1, 1, 1, 1);
+  out_color = vec4(1, 1, 1, 0.5);
 }")
 
 (def program (GL20/glCreateProgram))

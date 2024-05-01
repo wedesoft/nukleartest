@@ -6,8 +6,8 @@
              [org.lwjgl BufferUtils PointerBuffer]
              [org.lwjgl.system MemoryUtil MemoryStack]))
 
-(def width 640)
-(def height 480)
+(def width 1280)
+(def height 720)
 (def buffer-initial-size (* 4 1024))
 (def max-vertex-buffer (* 512 1024))
 (def max-element-buffer (* 128 1024))

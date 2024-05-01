@@ -1,8 +1,8 @@
 (ns nukleartest
     (:import [org.lwjgl.glfw GLFW]
              [org.lwjgl.opengl GL GL11 GL13 GL14 GL15 GL20 GL30]
-             [org.lwjgl.nuklear Nuklear NkContext NkAllocator NkRect NkUserFont NkPluginAllocI NkPluginFreeI NkConvertConfig
-              NkDrawVertexLayoutElement NkDrawVertexLayoutElement$Buffer NkBuffer NkDrawNullTexture]
+             [org.lwjgl.nuklear Nuklear NkContext NkAllocator NkRect NkColor NkUserFont NkPluginAllocI NkPluginFreeI
+              NkConvertConfig NkDrawVertexLayoutElement NkDrawVertexLayoutElement$Buffer NkBuffer NkDrawNullTexture]
              [org.lwjgl BufferUtils PointerBuffer]
              [org.lwjgl.system MemoryUtil MemoryStack]))
 
@@ -117,6 +117,7 @@ void main()
 
 (def stack (MemoryStack/stackPush))
 (def rect (NkRect/malloc stack))
+(def rgb (NkColor/malloc stack))
 
 (def null-tex (GL11/glGenTextures))
 (GL11/glBindTexture GL11/GL_TEXTURE_2D null-tex)
@@ -157,12 +158,19 @@ void main()
 (while (not (GLFW/glfwWindowShouldClose window))
        (GLFW/glfwPollEvents)
        (when (Nuklear/nk_begin context "Nuklear Example" (Nuklear/nk_rect 0 0 width height rect) 0)
-          (Nuklear/nk_layout_row_dynamic context 32 1)
-          (swap! i #(min (inc %) 100))
-          (let [p (PointerBuffer/allocateDirect 1)]
+          (swap! i #(mod (inc %) 100))
+          (let [canvas (Nuklear/nk_window_get_canvas context)
+                p (PointerBuffer/allocateDirect 1)]
             (.put p @i)
             (.flip p)
+            (Nuklear/nk_layout_row_dynamic context 32 1)
             (Nuklear/nk_progress context p 100 false)
+            (Nuklear/nk_layout_row_dynamic context 196 1)
+            (Nuklear/nk_widget rect context)
+            (Nuklear/nk_fill_rect canvas rect 2 (Nuklear/nk_rgb 127 63 63 rgb))
+            (Nuklear/nk_fill_circle canvas (Nuklear/nk_rect (+ (.x rect) (- (/ (.w rect) 2) 32))
+                                                            (+ (.y rect) (- (/ (.h rect) 2) 32)) 64 64 rect)
+                                    (Nuklear/nk_rgb 63 63 127 rgb))
             (Nuklear/nk_end context)
             (GL11/glClearColor 0.2 0.4 0.2 1.0)
             (GL11/glClear GL11/GL_COLOR_BUFFER_BIT)

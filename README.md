@@ -2,7 +2,7 @@
 
 Run as follows:
 ```
-clj -M -m nuklear_example
+clj -M -m nukleartest
 ```
 
 Renders a black screen :(

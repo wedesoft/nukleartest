@@ -1,4 +1,4 @@
-(ns nuklear-example
+(ns nukleartest
     (:import [org.lwjgl.glfw GLFW]
              [org.lwjgl.opengl GL GL11 GL14 GL15 GL20 GL30]
              [org.lwjgl.nuklear Nuklear NkContext NkAllocator NkRect NkUserFont NkPluginAllocI NkPluginFreeI NkConvertConfig
@@ -52,8 +52,7 @@ void main()
 {
   frag_uv = texcoord;
   frag_color = color;
-  // gl_Position = projection * vec4(position, 0, 1);
-  gl_Position = vec4(position.x / 320 - 1, 1 - position.y / 240, 0, 1);
+  gl_Position = projection * vec4(position, 0, 1);
 }")
 
 (def fragment-source
@@ -63,8 +62,7 @@ in vec4 frag_color;
 out vec4 out_color;
 void main()
 {
-  // out_color = frag_color;
-  out_color = vec4(1, 1, 1, 0.5);
+  out_color = frag_color;
 }")
 
 (def program (GL20/glCreateProgram))
@@ -91,6 +89,8 @@ void main()
   (System/exit 1))
 (GL20/glDeleteShader vertex-shader)
 (GL20/glDeleteShader fragment-shader)
+
+(GL20/glUseProgram program)
 
 (def projection (GL20/glGetUniformLocation program "projection"))
 (def position (GL20/glGetAttribLocation program "position"))
@@ -125,8 +125,8 @@ void main()
 
 (def vertex-layout (NkDrawVertexLayoutElement/malloc 4))
 (-> vertex-layout (.position 0) (.attribute Nuklear/NK_VERTEX_POSITION) (.format Nuklear/NK_FORMAT_FLOAT) (.offset 0))
-(-> vertex-layout (.position 1) (.attribute Nuklear/NK_VERTEX_TEXCOORD) (.format Nuklear/NK_FORMAT_FLOAT) (.offset 0))
-(-> vertex-layout (.position 2) (.attribute Nuklear/NK_VERTEX_COLOR) (.format Nuklear/NK_FORMAT_R8G8B8A8) (.offset 0))
+(-> vertex-layout (.position 1) (.attribute Nuklear/NK_VERTEX_TEXCOORD) (.format Nuklear/NK_FORMAT_FLOAT) (.offset 8))
+(-> vertex-layout (.position 2) (.attribute Nuklear/NK_VERTEX_COLOR) (.format Nuklear/NK_FORMAT_R8G8B8A8) (.offset 16))
 (-> vertex-layout (.position 3) (.attribute Nuklear/NK_VERTEX_ATTRIBUTE_COUNT) (.format Nuklear/NK_FORMAT_COUNT) (.offset 0))
 (.flip vertex-layout)
 

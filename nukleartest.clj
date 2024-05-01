@@ -1,6 +1,6 @@
 (ns nukleartest
     (:import [org.lwjgl.glfw GLFW]
-             [org.lwjgl.opengl GL GL11 GL14 GL15 GL20 GL30]
+             [org.lwjgl.opengl GL GL11 GL13 GL14 GL15 GL20 GL30]
              [org.lwjgl.nuklear Nuklear NkContext NkAllocator NkRect NkUserFont NkPluginAllocI NkPluginFreeI NkConvertConfig
               NkDrawVertexLayoutElement NkDrawVertexLayoutElement$Buffer NkBuffer NkDrawNullTexture]
              [org.lwjgl BufferUtils PointerBuffer]
@@ -56,12 +56,13 @@ void main()
 
 (def fragment-source
 "#version 410 core
+uniform sampler2D tex;
 in vec2 frag_uv;
 in vec4 frag_color;
 out vec4 out_color;
 void main()
 {
-  out_color = frag_color;
+  out_color = frag_color * texture(tex, frag_uv);
 }")
 
 (def program (GL20/glCreateProgram))
@@ -96,6 +97,8 @@ void main()
 (def texcoord (GL20/glGetAttribLocation program "texcoord"))
 (def color (GL20/glGetAttribLocation program "color"))
 
+(GL20/glUniform1i (GL20/glGetAttribLocation program "tex") 0)
+
 (def vbo (GL15/glGenBuffers))
 (def ebo (GL15/glGenBuffers))
 (def vao (GL30/glGenVertexArrays))
@@ -115,8 +118,17 @@ void main()
 (def stack (MemoryStack/stackPush))
 (def rect (NkRect/malloc stack))
 
-(def null-texture (NkDrawNullTexture/create))  ; TODO: use white 1x1 texture
-(.id (.texture null-texture) 0)
+(def null-tex (GL11/glGenTextures))
+(GL11/glBindTexture GL11/GL_TEXTURE_2D null-tex)
+(def buffer (BufferUtils/createIntBuffer 1))
+(.put buffer (int-array [0xffffffff]))
+(.flip buffer)
+(GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL11/GL_RGBA8 1 1 0 GL11/GL_RGBA GL11/GL_UNSIGNED_BYTE buffer)
+(GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_NEAREST)
+(GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_NEAREST)
+
+(def null-texture (NkDrawNullTexture/create))
+(.id (.texture null-texture) null-tex)
 (.set (.uv null-texture) 0.5 0.5)
 
 (def vertex-layout (NkDrawVertexLayoutElement/malloc 4))
@@ -160,7 +172,7 @@ void main()
             (GL11/glDisable GL11/GL_CULL_FACE)
             (GL11/glDisable GL11/GL_DEPTH_TEST)
             ; TODO: (GL11/glEnable GL11/GL_SCISSOR_TEST)
-            ; TODO: (GL13/glActiveTexture GL13/GL_TEXTURE0)
+            (GL13/glActiveTexture GL13/GL_TEXTURE0)
             (GL20/glUseProgram program)
             (GL20/glUniformMatrix4fv projection false (make-float-buffer (float-array [(/ 2.0 width) 0.0 0.0 0.0,
                                                                                        0.0 (/ -2.0 height) 0.0 0.0,
@@ -183,6 +195,7 @@ void main()
                     offset (atom 0)]
                 (while @cmd
                        (when (not (zero? (.elem_count @cmd)))
+                         (GL11/glBindTexture GL11/GL_TEXTURE_2D (.id (.texture @cmd)))
                          (GL11/glDrawElements GL11/GL_TRIANGLES (.elem_count @cmd) GL11/GL_UNSIGNED_SHORT @offset)
                          (swap! offset + (* 2 (.elem_count @cmd))))
                        (reset! cmd (Nuklear/nk__draw_next @cmd cmds context))))
@@ -200,6 +213,8 @@ void main()
 (GL30/glDeleteVertexArrays vao)
 (GL15/glDeleteBuffers ebo)
 (GL15/glDeleteBuffers vbo)
+
+(GL11/glDeleteTextures null-tex)
 
 (GL20/glDeleteProgram program)
 

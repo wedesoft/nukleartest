@@ -24,6 +24,7 @@
 (GLFW/glfwMakeContextCurrent window)
 (GLFW/glfwShowWindow window)
 (GL/createCapabilities)
+(GLFW/glfwSwapInterval 1)
 
 (def context (NkContext/create))
 

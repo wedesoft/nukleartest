@@ -114,9 +114,6 @@ void main()
 (GL20/glVertexAttribPointer color 4 GL11/GL_UNSIGNED_BYTE true 20 16)
 
 (def stack (MemoryStack/stackPush))
-(def cur (.mallocInt stack 1))
-(.put cur 0 100)
-(.flip cur)
 (def rect (NkRect/malloc stack))
 
 (def null-texture (NkDrawNullTexture/create))  ; TODO: use white 1x1 texture
@@ -144,11 +141,17 @@ void main()
       (.shape_AA Nuklear/NK_ANTI_ALIASING_ON)
       (.line_AA Nuklear/NK_ANTI_ALIASING_ON))
 
+(def i (atom 0))
+
 (while (not (GLFW/glfwWindowShouldClose window))
        (GLFW/glfwPollEvents)
        (when (Nuklear/nk_begin context "Nuklear Example" (Nuklear/nk_rect 0 0 width height rect) 0)
           (Nuklear/nk_layout_row_dynamic context 128 1)
-          (let [p (PointerBuffer/allocateDirect 1)]
+          (swap! i inc)
+          (println @i)
+          (let [cur (.mallocLong stack 1)
+                _   (.put cur 0 @i)
+                p (PointerBuffer/allocateDirect 1)]
             (.put p (MemoryUtil/memAddress cur))
             (.flip p)
             (println (Nuklear/nk_progress context p 100 true))
@@ -178,16 +181,12 @@ void main()
               (Nuklear/nk_buffer_init_fixed vbuf vertices)
               (Nuklear/nk_buffer_init_fixed ebuf elements)
               (Nuklear/nk_convert context cmds vbuf ebuf config)
-              (println "vbuf needed " (.needed vbuf))
-              (println "ebuf needed " (.needed ebuf))
               (GL15/glUnmapBuffer GL15/GL_ELEMENT_ARRAY_BUFFER)
               (GL15/glUnmapBuffer GL15/GL_ARRAY_BUFFER)
               (let [cmd    (atom (Nuklear/nk__draw_begin context cmds))
                     offset (atom 0)]
                 (while @cmd
                        (when (not (zero? (.elem_count @cmd)))
-                         (println (.elem_count @cmd) " elements")
-                         (println "texture " (.id (.texture @cmd)))
                          (GL11/glDrawElements GL11/GL_TRIANGLES (.elem_count @cmd) GL11/GL_UNSIGNED_SHORT @offset)
                          (swap! offset + (* 2 (.elem_count @cmd))))
                        (reset! cmd (Nuklear/nk__draw_next @cmd cmds context))))

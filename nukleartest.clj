@@ -116,7 +116,7 @@ void main()
 (def stack (MemoryStack/stackPush))
 (def cur (.mallocInt stack 1))
 (.put cur 0 100)
-(println (.get cur 0))
+(.flip cur)
 (def rect (NkRect/malloc stack))
 
 (def null-texture (NkDrawNullTexture/create))  ; TODO: use white 1x1 texture
@@ -151,7 +151,7 @@ void main()
           (let [p (PointerBuffer/allocateDirect 1)]
             (.put p (MemoryUtil/memAddress cur))
             (.flip p)
-            (Nuklear/nk_progress context p 100 true)
+            (println (Nuklear/nk_progress context p 100 true))
             (Nuklear/nk_end context)
             (GL11/glClearColor 0.2 0.4 0.2 1.0)
             (GL11/glClear GL11/GL_COLOR_BUFFER_BIT)

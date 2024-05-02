@@ -14,8 +14,8 @@
 (def max-vertex-buffer (* 512 1024))
 (def max-element-buffer (* 128 1024))
 (def font-height 18)
-(def bitmap-w 1024)
-(def bitmap-h 1024)
+(def bitmap-w 512)
+(def bitmap-h 512)
 
 (def stack (MemoryStack/stackPush))
 

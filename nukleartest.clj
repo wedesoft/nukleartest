@@ -2,15 +2,22 @@
     (:import [org.lwjgl.glfw GLFW]
              [org.lwjgl.opengl GL GL11 GL13 GL14 GL15 GL20 GL30]
              [org.lwjgl.nuklear Nuklear NkContext NkAllocator NkRect NkColor NkUserFont NkPluginAllocI NkPluginFreeI
-              NkConvertConfig NkDrawVertexLayoutElement NkDrawVertexLayoutElement$Buffer NkBuffer NkDrawNullTexture]
+              NkConvertConfig NkDrawVertexLayoutElement NkDrawVertexLayoutElement$Buffer NkBuffer NkDrawNullTexture
+              NkTextWidthCallbackI NkQueryFontGlyphCallbackI NkHandle NkUserFontGlyph]
              [org.lwjgl BufferUtils PointerBuffer]
-             [org.lwjgl.system MemoryUtil MemoryStack]))
+             [org.lwjgl.system MemoryUtil MemoryStack]
+             [org.lwjgl.stb STBTruetype STBTTFontinfo STBTTPackedchar STBTTPackContext STBImageWrite STBTTAlignedQuad]))
 
 (def width 1280)
 (def height 720)
 (def buffer-initial-size (* 4 1024))
 (def max-vertex-buffer (* 512 1024))
 (def max-element-buffer (* 128 1024))
+(def font-height 18)
+(def bitmap-w 1024)
+(def bitmap-h 1024)
+
+(def stack (MemoryStack/stackPush))
 
 (defn make-float-buffer [data]
   (doto (BufferUtils/createFloatBuffer (count data))
@@ -33,6 +40,79 @@
 (.mfree allocator (reify NkPluginFreeI (invoke [this handle ptr] (MemoryUtil/nmemFree ptr))))
 
 (def font (NkUserFont/create))
+
+(def ttf-in (clojure.java.io/input-stream "FiraSans.ttf"))
+(def ttf-out (java.io.ByteArrayOutputStream.))
+(clojure.java.io/copy ttf-in ttf-out)
+(def ttf-bytes (.toByteArray ttf-out))
+(def ttf (BufferUtils/createByteBuffer (count ttf-bytes)))
+(.put ttf ttf-bytes)
+(.flip ttf)
+
+(def fontinfo (STBTTFontinfo/create))
+(def cdata (STBTTPackedchar/calloc 95))
+
+(STBTruetype/stbtt_InitFont fontinfo ttf)
+(def scale (STBTruetype/stbtt_ScaleForPixelHeight fontinfo font-height))
+
+(def d (.mallocInt stack 1))
+(STBTruetype/stbtt_GetFontVMetrics fontinfo nil d nil)
+(def descent (* (.get d 0) scale))
+(def bitmap (MemoryUtil/memAlloc (* bitmap-w bitmap-h)))
+(def pc (STBTTPackContext/malloc stack))
+(STBTruetype/stbtt_PackBegin pc bitmap bitmap-w bitmap-h 0 1 0)
+(STBTruetype/stbtt_PackSetOversampling pc 4 4)
+(STBTruetype/stbtt_PackFontRange pc ttf 0 font-height 32 cdata)
+(STBTruetype/stbtt_PackEnd pc)
+
+(def texture (MemoryUtil/memAlloc (* bitmap-w bitmap-h 4)))
+(doseq [i (range (.capacity bitmap))]
+      (.putInt texture (bit-or (bit-shift-left (.get bitmap i) 24) 0x00FFFFFF)))
+(.flip texture)
+
+; (STBImageWrite/stbi_write_png "font.png" bitmap-w bitmap-h 4 texture (* 4 bitmap-w))
+
+(def font-tex (GL11/glGenTextures))
+(GL11/glBindTexture GL11/GL_TEXTURE_2D font-tex)
+(GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL11/GL_RGBA8 bitmap-w bitmap-h 0 GL11/GL_RGBA GL11/GL_UNSIGNED_BYTE texture)
+(GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)
+(GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR)
+(MemoryUtil/memFree texture)
+(MemoryUtil/memFree bitmap)
+
+(.width font
+        (reify NkTextWidthCallbackI
+               (invoke [this handle h text len]
+                 ; (let [stack (MemoryStack/stackPush)
+                 ;       unicode (.mallocInt stack 1)
+                 ;       text-len (Nuklear/nnk_utf_decode text (MemoryUtil/memAddress unicode) len)]
+                 ;
+                 ;   )
+                 (* 16.0 len))))
+(.height font font-height)
+(.query font
+        (reify NkQueryFontGlyphCallbackI
+               (invoke [this handle font-height glyph codepoint next-codepoint]
+                 (let [stack   (MemoryStack/stackPush)
+                       x       (.floats stack 0.0)
+                       y       (.floats stack 0.0)
+                       q       (STBTTAlignedQuad/malloc stack)
+                       advance (.mallocInt stack 1)]
+                   (STBTruetype/stbtt_GetPackedQuad cdata bitmap-w bitmap-h (- codepoint 32) x y q false)
+                   (STBTruetype/stbtt_GetCodepointHMetrics fontinfo codepoint advance nil)
+                   (let [ufg (NkUserFontGlyph/create glyph)]
+                     (.width ufg (- (.x1 q) (.x0 q)))
+                     (.height ufg (- (.y1 q) (.y0 q)))
+                     (.set (.offset ufg) (.x0 q) (+ (.y0 q) font-height descent))
+                     (.xadvance ufg (* (.get advance 0) scale))
+                     (.set (.uv ufg 0) (.s0 q) (.t0 q))
+                     (.set (.uv ufg 1) (.s1 q) (.t1 q)))
+                   (MemoryStack/stackPop)))))
+(def handle (NkHandle/create))
+(.id handle font-tex)
+(.texture font handle)
+
+; (Nuklear/nk_style_set_font context font)
 
 (def cmds (NkBuffer/create))
 
@@ -116,14 +196,13 @@ void main()
 (GL20/glVertexAttribPointer texcoord 2 GL11/GL_FLOAT false 20 8)
 (GL20/glVertexAttribPointer color 4 GL11/GL_UNSIGNED_BYTE true 20 16)
 
-(def stack (MemoryStack/stackPush))
 (def rect (NkRect/malloc stack))
 (def rgb (NkColor/malloc stack))
 
 (def null-tex (GL11/glGenTextures))
 (GL11/glBindTexture GL11/GL_TEXTURE_2D null-tex)
 (def buffer (BufferUtils/createIntBuffer 1))
-(.put buffer (int-array [0xffffffff]))
+(.put buffer (int-array [0xFFFFFFFF]))
 (.flip buffer)
 (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL11/GL_RGBA8 1 1 0 GL11/GL_RGBA GL11/GL_UNSIGNED_BYTE buffer)
 (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_NEAREST)
@@ -172,6 +251,8 @@ void main()
             (Nuklear/nk_fill_circle canvas (Nuklear/nk_rect (+ (.x rect) (- (/ (.w rect) 2) 32))
                                                             (+ (.y rect) (- (/ (.h rect) 2) 32)) 64 64 rect)
                                     (Nuklear/nk_rgb 63 63 127 rgb))
+            (Nuklear/nk_layout_row_dynamic context 32 1)
+            (Nuklear/nk_label context "Nuklear" Nuklear/NK_TEXT_LEFT)
             (Nuklear/nk_end context)
             (GL11/glClearColor 0.2 0.4 0.2 1.0)
             (GL11/glClear GL11/GL_COLOR_BUFFER_BIT)

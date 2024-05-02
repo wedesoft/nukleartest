@@ -8,8 +8,8 @@
              [org.lwjgl.system MemoryUtil MemoryStack]
              [org.lwjgl.stb STBTruetype STBTTFontinfo STBTTPackedchar STBTTPackContext STBImageWrite STBTTAlignedQuad]))
 
-(def width 1280)
-(def height 720)
+(def width 320)
+(def height 240)
 (def buffer-initial-size (* 4 1024))
 (def max-vertex-buffer (* 512 1024))
 (def max-element-buffer (* 128 1024))
@@ -83,12 +83,24 @@
 (.width font
         (reify NkTextWidthCallbackI
                (invoke [this handle h text len]
-                 ; (let [stack (MemoryStack/stackPush)
-                 ;       unicode (.mallocInt stack 1)
-                 ;       text-len (Nuklear/nnk_utf_decode text (MemoryUtil/memAddress unicode) len)]
-                 ;
-                 ;   )
-                 (* 16.0 len))))
+                 (let [stack     (MemoryStack/stackPush)
+                       unicode   (.mallocInt stack 1)
+                       advance   (.mallocInt stack 1)
+                       glyph-len (Nuklear/nnk_utf_decode text (MemoryUtil/memAddress unicode) len)
+                       result
+                       (loop [text-len glyph-len glyph-len glyph-len text-width 0.0]
+                             (if (or (> text-len len)
+                                     (zero? glyph-len)
+                                     (= (.get unicode 0) Nuklear/NK_UTF_INVALID))
+                               text-width
+                               (do
+                                 (STBTruetype/stbtt_GetCodepointHMetrics fontinfo (.get unicode 0) advance nil)
+                                 (let [text-width (+ text-width (* (.get advance 0) scale))
+                                       glyph-len  (Nuklear/nnk_utf_decode (+ text text-len)
+                                                                          (MemoryUtil/memAddress unicode) (- len text-len))]
+                                   (recur (+ text-len glyph-len) glyph-len text-width)))))]
+                   (MemoryStack/stackPop)
+                   result))))
 (.height font font-height)
 (.query font
         (reify NkQueryFontGlyphCallbackI
@@ -245,7 +257,7 @@ void main()
             (.flip p)
             (Nuklear/nk_layout_row_dynamic context 32 1)
             (Nuklear/nk_progress context p 100 false)
-            (Nuklear/nk_layout_row_dynamic context 196 1)
+            (Nuklear/nk_layout_row_dynamic context 120 1)
             (Nuklear/nk_widget rect context)
             (Nuklear/nk_fill_rect canvas rect 2 (Nuklear/nk_rgb 127 63 63 rgb))
             (Nuklear/nk_fill_circle canvas (Nuklear/nk_rect (+ (.x rect) (- (/ (.w rect) 2) 32))
@@ -253,6 +265,9 @@ void main()
                                     (Nuklear/nk_rgb 63 63 127 rgb))
             (Nuklear/nk_layout_row_dynamic context 32 1)
             (Nuklear/nk_label context "Nuklear" Nuklear/NK_TEXT_LEFT)
+            (Nuklear/nk_layout_row_dynamic context 32 2)
+            (Nuklear/nk_check_label context "Checked" true)
+            (Nuklear/nk_check_label context "Not Checked" false)
             (Nuklear/nk_end context)
             (GL11/glClearColor 0.2 0.4 0.2 1.0)
             (GL11/glClear GL11/GL_COLOR_BUFFER_BIT)

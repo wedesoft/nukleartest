@@ -5,20 +5,6 @@ Run as follows:
 clj -M -m nukleartest
 ```
 
-Renders a black screen :(
-
-Added GLFWDemo.java and other files.
-Build:
-```
-./build.sh
-```
-
-Run like this:
-```
-./run.sh
-```
-
-
 Also see:
 
 * [LWJGL Nuklear Package docs](https://javadoc.lwjgl.org/org/lwjgl/nuklear/package-summary.html)

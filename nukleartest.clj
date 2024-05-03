@@ -88,7 +88,9 @@
   window
   (reify GLFWCursorPosCallbackI
          (invoke [this window xpos ypos]
-           (Nuklear/nk_input_motion context (int xpos) (int ypos)))))
+           (Nuklear/nk_input_motion context (int xpos) (int ypos))
+           (println "nk_input_motion " (int xpos) (int ypos)))))
+
 (GLFW/glfwSetMouseButtonCallback
   window
   (reify GLFWMouseButtonCallbackI
@@ -103,7 +105,9 @@
                               GLFW/GLW_MOUSE_BUTTON_RIGHT Nuklear/NK_BUTTON_RIGHT
                               GLFW/GLW_MOUSE_BUTTON_MIDDLE Nuklear/NK_BUTTON_MIDDLE
                               Nuklear/NK_BUTTON_LEFT)]
-               (Nuklear/nk_input_button context nkbutton x y (= action GLFW/GLFW_PRESS)))))))
+               (Nuklear/nk_input_button context nkbutton x y (= action GLFW/GLFW_PRESS))
+               (println "nk_input_button " nkbutton x y (= action GLFW/GLFW_PRESS))
+               (MemoryStack/stackPop))))))
 
 (.width font
         (reify NkTextWidthCallbackI

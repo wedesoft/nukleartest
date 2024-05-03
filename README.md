@@ -1,4 +1,4 @@
-# Nuklear example (not working)
+# Nuklear example
 
 Run as follows:
 ```

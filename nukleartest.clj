@@ -1,5 +1,5 @@
 (ns nukleartest
-    (:import [org.lwjgl.glfw GLFW]
+    (:import [org.lwjgl.glfw GLFW GLFWCursorPosCallbackI GLFWMouseButtonCallbackI]
              [org.lwjgl.opengl GL GL11 GL13 GL14 GL15 GL20 GL30]
              [org.lwjgl.nuklear Nuklear NkContext NkAllocator NkRect NkColor NkUserFont NkPluginAllocI NkPluginFreeI
               NkConvertConfig NkDrawVertexLayoutElement NkDrawVertexLayoutElement$Buffer NkBuffer NkDrawNullTexture
@@ -9,7 +9,7 @@
              [org.lwjgl.stb STBTruetype STBTTFontinfo STBTTPackedchar STBTTPackContext STBImageWrite STBTTAlignedQuad]))
 
 (def width 320)
-(def height 240)
+(def height 320)
 (def buffer-initial-size (* 4 1024))
 (def max-vertex-buffer (* 512 1024))
 (def max-element-buffer (* 128 1024))
@@ -26,6 +26,8 @@
 
 (GLFW/glfwInit)
 
+(GLFW/glfwDefaultWindowHints)
+(GLFW/glfwWindowHint GLFW/GLFW_RESIZABLE GLFW/GLFW_FALSE)
 (def window (GLFW/glfwCreateWindow width height "Nuklear Example" 0 0))
 
 (GLFW/glfwMakeContextCurrent window)
@@ -81,6 +83,27 @@
 (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR)
 (MemoryUtil/memFree texture)
 (MemoryUtil/memFree bitmap)
+
+(GLFW/glfwSetCursorPosCallback
+  window
+  (reify GLFWCursorPosCallbackI
+         (invoke [this window xpos ypos]
+           (Nuklear/nk_input_motion context (int xpos) (int ypos)))))
+(GLFW/glfwSetMouseButtonCallback
+  window
+  (reify GLFWMouseButtonCallbackI
+         (invoke [this window button action mods]
+           (let [stack (MemoryStack/stackPush)
+                 cx    (.mallocDouble stack 1)
+                 cy    (.mallocDouble stack 1)]
+             (GLFW/glfwGetCursorPos window cx cy)
+             (let [x        (int (.get cx 0))
+                   y        (int (.get cy 0))
+                   nkbutton (case button
+                              GLFW/GLW_MOUSE_BUTTON_RIGHT Nuklear/NK_BUTTON_RIGHT
+                              GLFW/GLW_MOUSE_BUTTON_MIDDLE Nuklear/NK_BUTTON_MIDDLE
+                              Nuklear/NK_BUTTON_LEFT)]
+               (Nuklear/nk_input_button context nkbutton x y (= action GLFW/GLFW_PRESS)))))))
 
 (.width font
         (reify NkTextWidthCallbackI
@@ -248,7 +271,6 @@ void main()
       (.line_AA Nuklear/NK_ANTI_ALIASING_ON))
 
 (def i (atom 0))
-
 (def p (PointerBuffer/allocateDirect 1))
 
 (while (not (GLFW/glfwWindowShouldClose window))
@@ -269,6 +291,11 @@ void main()
             (Nuklear/nk_layout_row_dynamic context 32 2)
             (Nuklear/nk_check_label context "Checked" true)
             (Nuklear/nk_check_label context "Not Checked" false)
+            (Nuklear/nk_layout_row_dynamic context 32 2)
+            (if (Nuklear/nk_button_label context "Ok")
+              (println "Ok"))
+            (if (Nuklear/nk_button_label context "Cancel")
+              (println "Cancel"))
             (Nuklear/nk_end context)
             (GL11/glClearColor 0.2 0.4 0.2 1.0)
             (GL11/glClear GL11/GL_COLOR_BUFFER_BIT)

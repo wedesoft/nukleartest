@@ -13,7 +13,7 @@
 (def buffer-initial-size (* 4 1024))
 (def max-vertex-buffer (* 512 1024))
 (def max-element-buffer (* 128 1024))
-(def font-height 18)
+(def font-height 24)
 (def bitmap-w 512)
 (def bitmap-h 512)
 
@@ -88,8 +88,7 @@
   window
   (reify GLFWCursorPosCallbackI
          (invoke [this window xpos ypos]
-           (Nuklear/nk_input_motion context (int xpos) (int ypos))
-           (println "nk_input_motion " (int xpos) (int ypos)))))
+           (Nuklear/nk_input_motion context (int xpos) (int ypos)))))
 
 (GLFW/glfwSetMouseButtonCallback
   window
@@ -101,12 +100,11 @@
              (GLFW/glfwGetCursorPos window cx cy)
              (let [x        (int (.get cx 0))
                    y        (int (.get cy 0))
-                   nkbutton (case button
-                              GLFW/GLW_MOUSE_BUTTON_RIGHT Nuklear/NK_BUTTON_RIGHT
-                              GLFW/GLW_MOUSE_BUTTON_MIDDLE Nuklear/NK_BUTTON_MIDDLE
-                              Nuklear/NK_BUTTON_LEFT)]
+                   nkbutton (cond
+                              (= button GLFW/GLFW_MOUSE_BUTTON_RIGHT) Nuklear/NK_BUTTON_RIGHT
+                              (= button GLFW/GLFW_MOUSE_BUTTON_MIDDLE) Nuklear/NK_BUTTON_MIDDLE
+                              :else Nuklear/NK_BUTTON_LEFT)]
                (Nuklear/nk_input_button context nkbutton x y (= action GLFW/GLFW_PRESS))
-               (println "nk_input_button " nkbutton x y (= action GLFW/GLFW_PRESS))
                (MemoryStack/stackPop))))))
 
 (.width font

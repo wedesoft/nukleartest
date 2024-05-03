@@ -274,7 +274,9 @@ void main()
 (def p (PointerBuffer/allocateDirect 1))
 
 (while (not (GLFW/glfwWindowShouldClose window))
+       (Nuklear/nk_input_begin context)
        (GLFW/glfwPollEvents)
+       (Nuklear/nk_input_end context)
        (when (Nuklear/nk_begin context "Nuklear Example" (Nuklear/nk_rect 0 0 width height rect) 0)
           (let [canvas (Nuklear/nk_window_get_canvas context)]
             (.put p (swap! i #(mod (inc %) 100))) (.flip p)

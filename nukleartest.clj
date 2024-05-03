@@ -66,8 +66,10 @@
 (STBTruetype/stbtt_PackEnd pc)
 
 (def texture (MemoryUtil/memAlloc (* bitmap-w bitmap-h 4)))
-(doseq [i (range (.capacity bitmap))]
-      (.putInt texture (bit-or (bit-shift-left (.get bitmap i) 24) 0x00FFFFFF)))
+(def data (byte-array (* bitmap-w bitmap-h)))
+(.get bitmap data)
+(def data (int-array (mapv #(bit-or (bit-shift-left % 24) 0x00FFFFFF) data)))
+(.put (.asIntBuffer texture) data)
 (.flip texture)
 
 ; (STBImageWrite/stbi_write_png "font.png" bitmap-w bitmap-h 4 texture (* 4 bitmap-w))
@@ -247,14 +249,13 @@ void main()
 
 (def i (atom 0))
 
+(def p (PointerBuffer/allocateDirect 1))
+
 (while (not (GLFW/glfwWindowShouldClose window))
        (GLFW/glfwPollEvents)
        (when (Nuklear/nk_begin context "Nuklear Example" (Nuklear/nk_rect 0 0 width height rect) 0)
-          (swap! i #(mod (inc %) 100))
-          (let [canvas (Nuklear/nk_window_get_canvas context)
-                p (PointerBuffer/allocateDirect 1)]
-            (.put p @i)
-            (.flip p)
+          (let [canvas (Nuklear/nk_window_get_canvas context)]
+            (.put p (swap! i #(mod (inc %) 100))) (.flip p)
             (Nuklear/nk_layout_row_dynamic context 32 1)
             (Nuklear/nk_progress context p 100 false)
             (Nuklear/nk_layout_row_dynamic context 120 1)

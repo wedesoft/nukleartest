@@ -149,8 +149,6 @@
 (.id handle font-tex)
 (.texture font handle)
 
-; (Nuklear/nk_style_set_font context font)
-
 (def cmds (NkBuffer/create))
 
 (Nuklear/nk_init context allocator font)
@@ -288,9 +286,6 @@ void main()
                                     (Nuklear/nk_rgb 63 63 127 rgb))
             (Nuklear/nk_layout_row_dynamic context 32 1)
             (Nuklear/nk_label context "Nuklear" Nuklear/NK_TEXT_LEFT)
-            (Nuklear/nk_layout_row_dynamic context 32 2)
-            (Nuklear/nk_check_label context "Checked" true)
-            (Nuklear/nk_check_label context "Not Checked" false)
             (Nuklear/nk_layout_row_dynamic context 32 2)
             (if (Nuklear/nk_button_label context "Ok")
               (println "Ok"))

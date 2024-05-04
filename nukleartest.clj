@@ -3,10 +3,11 @@
              [org.lwjgl.opengl GL GL11 GL13 GL14 GL15 GL20 GL30]
              [org.lwjgl.nuklear Nuklear NkContext NkAllocator NkRect NkColor NkUserFont NkPluginAllocI NkPluginFreeI
               NkConvertConfig NkDrawVertexLayoutElement NkDrawVertexLayoutElement$Buffer NkBuffer NkDrawNullTexture
-              NkTextWidthCallbackI NkQueryFontGlyphCallbackI NkHandle NkUserFontGlyph]
+              NkTextWidthCallbackI NkQueryFontGlyphCallbackI NkHandle NkUserFontGlyph NkImage]
              [org.lwjgl BufferUtils PointerBuffer]
              [org.lwjgl.system MemoryUtil MemoryStack]
-             [org.lwjgl.stb STBTruetype STBTTFontinfo STBTTPackedchar STBTTPackContext STBImageWrite STBTTAlignedQuad]))
+             [org.lwjgl.stb STBTruetype STBTTFontinfo STBTTPackedchar STBTTPackContext STBImageWrite STBTTAlignedQuad
+              STBImage]))
 
 (def width 640)
 (def height 480)
@@ -256,6 +257,21 @@ void main()
 (-> vertex-layout (.position 3) (.attribute Nuklear/NK_VERTEX_ATTRIBUTE_COUNT) (.format Nuklear/NK_FORMAT_COUNT) (.offset 0))
 (.flip vertex-layout)
 
+(def download-icon (NkImage/create))
+(def w (int-array 1))
+(def h (int-array 1))
+(def c (int-array 1))
+(def buffer (STBImage/stbi_load "download.png" w h c 4))
+(def download-tex (GL11/glGenTextures))
+(GL11/glBindTexture GL11/GL_TEXTURE_2D download-tex)
+(GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)
+(GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR)
+(GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 GL11/GL_RGBA8 (aget w 0) (aget h 0) 0 GL11/GL_RGBA GL11/GL_UNSIGNED_BYTE buffer)
+(GL11/glBindTexture GL11/GL_TEXTURE_2D 0)
+(def handle (NkHandle/create))
+(.id handle download-tex)
+(.handle download-icon handle)
+
 (def config (NkConvertConfig/calloc stack))
 
 (doto config
@@ -312,7 +328,7 @@ void main()
             (Nuklear/nk_layout_row_dynamic context 32 2)
             (Nuklear/nk_property_int context "Compression:" 0 compression 100 10 (float 1))
             (Nuklear/nk_property_float context "Quality:" (float 0.0) quality (float 10.0) (float 1.0) (float 0.01))
-            (Nuklear/nk_layout_row_dynamic context 32 13)
+            (Nuklear/nk_layout_row_dynamic context 32 14)
             (Nuklear/nk_button_symbol context Nuklear/NK_SYMBOL_RECT_SOLID)
             (Nuklear/nk_button_symbol context Nuklear/NK_SYMBOL_RECT_OUTLINE)
             (Nuklear/nk_button_symbol context Nuklear/NK_SYMBOL_TRIANGLE_UP)
@@ -326,6 +342,7 @@ void main()
             (Nuklear/nk_button_symbol context Nuklear/NK_SYMBOL_PLUS)
             (Nuklear/nk_button_symbol context Nuklear/NK_SYMBOL_MINUS)
             (Nuklear/nk_button_symbol context Nuklear/NK_SYMBOL_UNDERSCORE)
+            (Nuklear/nk_button_image context download-icon)
             (Nuklear/nk_end context)
             (GL11/glEnable GL11/GL_BLEND)
             (GL14/glBlendEquation GL14/GL_FUNC_ADD)

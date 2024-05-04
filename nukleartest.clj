@@ -3,14 +3,14 @@
              [org.lwjgl.opengl GL GL11 GL13 GL14 GL15 GL20 GL30]
              [org.lwjgl.nuklear Nuklear NkContext NkAllocator NkRect NkColor NkUserFont NkPluginAllocI NkPluginFreeI
               NkConvertConfig NkDrawVertexLayoutElement NkDrawVertexLayoutElement$Buffer NkBuffer NkDrawNullTexture
-              NkTextWidthCallbackI NkQueryFontGlyphCallbackI NkHandle NkUserFontGlyph NkImage]
+              NkTextWidthCallbackI NkQueryFontGlyphCallbackI NkHandle NkUserFontGlyph NkImage NkVec2]
              [org.lwjgl BufferUtils PointerBuffer]
              [org.lwjgl.system MemoryUtil MemoryStack]
              [org.lwjgl.stb STBTruetype STBTTFontinfo STBTTPackedchar STBTTPackContext STBImageWrite STBTTAlignedQuad
               STBImage]))
 
 (def width 640)
-(def height 480)
+(def height 640)
 (def buffer-initial-size (* 4 1024))
 (def max-vertex-buffer (* 512 1024))
 (def max-element-buffer (* 128 1024))
@@ -286,6 +286,10 @@ void main()
       (.shape_AA Nuklear/NK_ANTI_ALIASING_ON)
       (.line_AA Nuklear/NK_ANTI_ALIASING_ON))
 
+(def combo-size (NkVec2/create))
+(.x combo-size 320)
+(.y combo-size 120)
+
 (def i (atom 0))
 (def increment (atom 0))
 (def progress (PointerBuffer/allocateDirect 1))
@@ -294,6 +298,8 @@ void main()
 (def flip (atom false))
 (def crop (atom false))
 (def quality (.put (BufferUtils/createFloatBuffer 1) 0 (float 5.0)))
+(def combo-items (mapv #(str "test" (inc %)) (range 10)))
+(def selected (atom (first combo-items)))
 
 (while (not (GLFW/glfwWindowShouldClose window))
        (Nuklear/nk_input_begin context)
@@ -347,6 +353,13 @@ void main()
             (Nuklear/nk_button_symbol context Nuklear/NK_SYMBOL_MINUS)
             (Nuklear/nk_button_symbol context Nuklear/NK_SYMBOL_UNDERSCORE)
             (Nuklear/nk_button_image context download-icon)
+            (Nuklear/nk_layout_row_dynamic context 32 1)
+            (when (Nuklear/nk_combo_begin_label context @selected combo-size)
+              (Nuklear/nk_layout_row_dynamic context 32 1)
+              (doseq [item combo-items]
+                     (if (Nuklear/nk_combo_item_text context item Nuklear/NK_TEXT_LEFT)
+                       (reset! selected item)))
+              (Nuklear/nk_combo_end context))
             (Nuklear/nk_end context)
             (GL11/glEnable GL11/GL_BLEND)
             (GL14/glBlendEquation GL14/GL_FUNC_ADD)

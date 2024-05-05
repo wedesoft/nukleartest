@@ -1,9 +1,11 @@
 (ns nukleartest
-    (:import [org.lwjgl.glfw GLFW GLFWCursorPosCallbackI GLFWMouseButtonCallbackI]
+    (:import [org.lwjgl.glfw GLFW GLFWCursorPosCallbackI GLFWMouseButtonCallbackI GLFWCharCallbackI
+              GLFWKeyCallbackI]
              [org.lwjgl.opengl GL GL11 GL13 GL14 GL15 GL20 GL30]
              [org.lwjgl.nuklear Nuklear NkContext NkAllocator NkRect NkColor NkUserFont NkPluginAllocI NkPluginFreeI
               NkConvertConfig NkDrawVertexLayoutElement NkDrawVertexLayoutElement$Buffer NkBuffer NkDrawNullTexture
-              NkTextWidthCallbackI NkQueryFontGlyphCallbackI NkHandle NkUserFontGlyph NkImage NkVec2]
+              NkTextWidthCallbackI NkQueryFontGlyphCallbackI NkHandle NkUserFontGlyph NkImage NkVec2
+              NkPluginFilter NkPluginFilterI]
              [org.lwjgl BufferUtils PointerBuffer]
              [org.lwjgl.system MemoryUtil MemoryStack]
              [org.lwjgl.stb STBTruetype STBTTFontinfo STBTTPackedchar STBTTPackContext STBImageWrite STBTTAlignedQuad
@@ -90,6 +92,32 @@
   (reify GLFWCursorPosCallbackI
          (invoke [this window xpos ypos]
            (Nuklear/nk_input_motion context (int xpos) (int ypos)))))
+
+(GLFW/glfwSetCharCallback
+  window
+  (reify GLFWCharCallbackI
+         (invoke [this window codepoint]
+           (Nuklear/nk_input_unicode context codepoint))))
+
+(GLFW/glfwSetKeyCallback
+  window
+  (reify GLFWKeyCallbackI
+         (invoke [this window k scancode action mods]
+           (let [press (= action GLFW/GLFW_PRESS)]
+             (cond
+               (= k GLFW/GLFW_KEY_ESCAPE)      (GLFW/glfwSetWindowShouldClose window true)
+               (= k GLFW/GLFW_KEY_DELETE)      (Nuklear/nk_input_key context Nuklear/NK_KEY_DEL press)
+               (= k GLFW/GLFW_KEY_ENTER)       (Nuklear/nk_input_key context Nuklear/NK_KEY_ENTER press)
+               (= k GLFW/GLFW_KEY_TAB)         (Nuklear/nk_input_key context Nuklear/NK_KEY_TAB press)
+               (= k GLFW/GLFW_KEY_BACKSPACE)   (Nuklear/nk_input_key context Nuklear/NK_KEY_BACKSPACE press)
+               (= k GLFW/GLFW_KEY_UP)          (Nuklear/nk_input_key context Nuklear/NK_KEY_UP press)
+               (= k GLFW/GLFW_KEY_DOWN)        (Nuklear/nk_input_key context Nuklear/NK_KEY_DOWN press)
+               (= k GLFW/GLFW_KEY_LEFT)        (Nuklear/nk_input_key context Nuklear/NK_KEY_LEFT press)
+               (= k GLFW/GLFW_KEY_RIGHT)       (Nuklear/nk_input_key context Nuklear/NK_KEY_RIGHT press)
+               (= k GLFW/GLFW_KEY_HOME)        (Nuklear/nk_input_key context Nuklear/NK_KEY_TEXT_START press)
+               (= k GLFW/GLFW_KEY_END)         (Nuklear/nk_input_key context Nuklear/NK_KEY_TEXT_END press)
+               (= k GLFW/GLFW_KEY_LEFT_SHIFT)  (Nuklear/nk_input_key context Nuklear/NK_KEY_SHIFT press)
+               (= k GLFW/GLFW_KEY_RIGHT_SHIFT) (Nuklear/nk_input_key context Nuklear/NK_KEY_SHIFT press))))))
 
 (GLFW/glfwSetMouseButtonCallback
   window
@@ -301,6 +329,9 @@ void main()
 (def quality (.put (BufferUtils/createFloatBuffer 1) 0 (float 5.0)))
 (def combo-items (mapv #(str "test" (inc %)) (range 10)))
 (def selected (atom (first combo-items)))
+(def text (BufferUtils/createByteBuffer 256))
+(def text-len (int-array [0]))
+(def text-filter (NkPluginFilter/create (reify NkPluginFilterI (invoke [this edit unicode] (Nuklear/nnk_filter_ascii edit unicode)))))
 
 (while (not (GLFW/glfwWindowShouldClose window))
        (Nuklear/nk_input_begin context)
@@ -369,6 +400,7 @@ void main()
                      (if (Nuklear/nk_combo_item_text context item Nuklear/NK_TEXT_LEFT)
                        (reset! selected item)))
               (Nuklear/nk_combo_end context))
+            (Nuklear/nk_edit_string context Nuklear/NK_EDIT_FIELD text text-len 256 text-filter)
             (Nuklear/nk_end context)
             (GL11/glEnable GL11/GL_BLEND)
             (GL14/glBlendEquation GL14/GL_FUNC_ADD)

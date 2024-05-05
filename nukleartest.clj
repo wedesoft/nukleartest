@@ -438,19 +438,17 @@ void main()
               (Nuklear/nk_convert context cmds vbuf ebuf config)
               (GL15/glUnmapBuffer GL15/GL_ELEMENT_ARRAY_BUFFER)
               (GL15/glUnmapBuffer GL15/GL_ARRAY_BUFFER)
-              (let [cmd    (atom (Nuklear/nk__draw_begin context cmds))
-                    offset (atom 0)]
-                (while @cmd
-                       (when (not (zero? (.elem_count @cmd)))
-                         (GL11/glBindTexture GL11/GL_TEXTURE_2D (.id (.texture @cmd)))
-                         (let [clip-rect (.clip_rect @cmd)]
-                           (GL11/glScissor (int (.x clip-rect))
-                                           (int (- height (int (+ (.y clip-rect) (.h clip-rect)))))
-                                           (int (.w clip-rect))
-                                           (int (.h clip-rect))))
-                         (GL11/glDrawElements GL11/GL_TRIANGLES (.elem_count @cmd) GL11/GL_UNSIGNED_SHORT @offset)
-                         (swap! offset + (* 2 (.elem_count @cmd))))
-                       (reset! cmd (Nuklear/nk__draw_next @cmd cmds context))))
+              (loop [cmd (Nuklear/nk__draw_begin context cmds) offset 0]
+                (when cmd
+                  (when (not (zero? (.elem_count cmd)))
+                    (GL11/glBindTexture GL11/GL_TEXTURE_2D (.id (.texture cmd)))
+                    (let [clip-rect (.clip_rect cmd)]
+                      (GL11/glScissor (int (.x clip-rect))
+                                      (int (- height (int (+ (.y clip-rect) (.h clip-rect)))))
+                                      (int (.w clip-rect))
+                                      (int (.h clip-rect))))
+                    (GL11/glDrawElements GL11/GL_TRIANGLES (.elem_count cmd) GL11/GL_UNSIGNED_SHORT offset))
+                  (recur (Nuklear/nk__draw_next cmd cmds context) (+ offset (* 2 (.elem_count cmd))))))
               (Nuklear/nk_clear context)
               (Nuklear/nk_buffer_clear cmds)
               (GLFW/glfwSwapBuffers window)

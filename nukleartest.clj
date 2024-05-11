@@ -431,8 +431,8 @@ void main()
            (if (Nuklear/nk_widget_is_mouse_clicked context Nuklear/NK_BUTTON_LEFT)
              (println "Widget clicked"))
            (let [color (if (Nuklear/nk_widget_is_hovered context)
-                         (Nuklear/nk_rgb 255 101 101 rgb)
-                         (Nuklear/nk_rgb 255 127 127 rgb))]
+                         (Nuklear/nk_rgb 255 127 127 rgb)
+                         (Nuklear/nk_rgb 255 101 101 rgb))]
              (Nuklear/nk_widget rect context)
              (Nuklear/nk_fill_rect canvas rect 2 color)
              (Nuklear/nk_fill_circle canvas (Nuklear/nk_rect (+ (.x rect) (- (/ (.w rect) 2) 32))

@@ -314,7 +314,7 @@ void main()
   window
   (reify GLFWKeyCallbackI
          (invoke [this window k scancode action mods]
-           (let [press (= action GLFW/GLFW_PRESS)]
+           (let [press (or (= action GLFW/GLFW_PRESS) (= action GLFW/GLFW_REPEAT))]
              (cond
                (= k GLFW/GLFW_KEY_ESCAPE)      (GLFW/glfwSetWindowShouldClose window true)
                (= k GLFW/GLFW_KEY_DELETE)      (Nuklear/nk_input_key context Nuklear/NK_KEY_DEL press)

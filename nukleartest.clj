@@ -392,9 +392,6 @@ void main()
 (.put style-table Nuklear/NK_COLOR_TAB_HEADER (Nuklear/nk_rgb 48 83 111 rgb))
 (Nuklear/nk_style_from_table context style-table)
 
-(def rect (NkRect/malloc stack))
-(def rgb (NkColor/malloc stack))
-
 (def menu-size (NkVec2/create))
 (.x menu-size 80)
 (.y menu-size 40)
@@ -549,9 +546,9 @@ void main()
 (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER 0)
 (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER 0)
 
-(GL30/glDeleteVertexArrays vao)
 (GL15/glDeleteBuffers ebo)
 (GL15/glDeleteBuffers vbo)
+(GL30/glDeleteVertexArrays vao)
 
 (GL11/glDeleteTextures download-tex)
 (GL11/glDeleteTextures null-tex)

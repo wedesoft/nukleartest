@@ -163,7 +163,7 @@ void main()
 
 (def font (NkUserFont/create))
 
-(def ttf-in (clojure.java.io/input-stream "FiraSans.ttf"))
+(def ttf-in (clojure.java.io/input-stream "B612-Regular.ttf"))
 (def ttf-out (java.io.ByteArrayOutputStream.))
 (clojure.java.io/copy ttf-in ttf-out)
 (def ttf-bytes (.toByteArray ^java.io.ByteArrayOutputStream ttf-out))

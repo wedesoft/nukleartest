@@ -163,12 +163,10 @@ void main()
 
 (def font (NkUserFont/create))
 
-(def ttf-in (clojure.java.io/input-stream "B612-Regular.ttf"))
-(def ttf-out (java.io.ByteArrayOutputStream.))
-(clojure.java.io/copy ttf-in ttf-out)
-(def ttf-bytes (.toByteArray ^java.io.ByteArrayOutputStream ttf-out))
-(def ttf (BufferUtils/createByteBuffer (count ttf-bytes)))
-(.put ^java.nio.DirectByteBuffer ttf ^bytes ttf-bytes)
+(def ttf-in (java.nio.channels.FileChannel/open (java.nio.file.Paths/get "B612-Regular.ttf" (make-array String 0)) (into-array java.nio.file.StandardOpenOption [java.nio.file.StandardOpenOption/READ])))
+(def n (.length (clojure.java.io/file "B612-Regular.ttf")))
+(def ttf (BufferUtils/createByteBuffer n))
+(.read ^java.nio.channels.FileChannel ttf-in ^java.nio.DirectByteBuffer ttf)
 (.flip ^java.nio.DirectByteBuffer ttf)
 
 (def fontinfo (STBTTFontinfo/create))

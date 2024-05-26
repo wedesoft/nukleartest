@@ -188,9 +188,9 @@ void main()
 (def texture (MemoryUtil/memAlloc (* bitmap-w bitmap-h 4)))
 (def data (byte-array (* bitmap-w bitmap-h)))
 (.get ^java.nio.DirectByteBuffer bitmap ^bytes data)
-(def data (int-array (mapv #(bit-or (bit-shift-left % 24) 0x00FFFFFF) data)))
-(def texture-int (.asIntBuffer ^java.nio.DirectByteBuffer texture))
-(.put ^java.nio.DirectIntBufferU texture-int ^ints data)
+(def data (byte-array (mapcat (fn [alpha] [-1 -1 -1 alpha]) data)))
+(.put ^java.nio.DirectByteBuffer texture ^bytes data)
+(.flip texture)
 
 ; (STBImageWrite/stbi_write_png "font.png" bitmap-w bitmap-h 4 texture (* 4 bitmap-w))
 

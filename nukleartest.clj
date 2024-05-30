@@ -190,7 +190,7 @@ void main()
 (.get ^java.nio.DirectByteBuffer bitmap ^bytes data)
 (def data (byte-array (mapcat (fn [alpha] [-1 -1 -1 alpha]) data)))
 (.put ^java.nio.DirectByteBuffer texture ^bytes data)
-(.flip texture)
+(.flip ^java.nio.DirectByteBuffer texture)
 
 ; (STBImageWrite/stbi_write_png "font.png" bitmap-w bitmap-h 4 texture (* 4 bitmap-w))
 

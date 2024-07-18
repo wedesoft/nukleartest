@@ -9,5 +9,4 @@
         org.lwjgl/lwjgl-glfw$natives-windows {:mvn/version "3.3.4"}
         org.lwjgl/lwjgl-stb {:mvn/version "3.3.4"}
         org.lwjgl/lwjgl-stb$natives-windows {:mvn/version "3.3.4"}}
- }
  :paths ["."]}

@@ -1,5 +1,6 @@
 (ns nukleartest
-    (:import [org.lwjgl BufferUtils PointerBuffer]
+    (:import [java.nio.charset Charset]
+             [org.lwjgl BufferUtils PointerBuffer]
              [org.lwjgl.glfw GLFW GLFWCursorPosCallbackI GLFWMouseButtonCallbackI GLFWScrollCallbackI GLFWCharCallbackI
               GLFWKeyCallbackI]
              [org.lwjgl.opengl GL GL11 GL13 GL14 GL15 GL20 GL30]
@@ -429,7 +430,7 @@ void main()
 (def selected (atom (first combo-items)))
 (def text (BufferUtils/createByteBuffer 256))
 (def text-len (int-array [0]))
-(def text-filter (NkPluginFilter/create (reify NkPluginFilterI (invoke [this edit unicode] (Nuklear/nnk_filter_ascii edit unicode)))))
+(def text-filter (reify NkPluginFilterI (invoke [this edit unicode] (Nuklear/nnk_filter_ascii edit unicode))))
 (def slider (BufferUtils/createIntBuffer 1))
 (.put ^java.nio.DirectIntBufferU slider 0 50)
 
